@@ -4,7 +4,7 @@ local bit = require"bit"
 	Add integers, wrapping at 2^32. This uses 16-bit operations internally
 	to work around bugs in some JS interpreters.
 --]]
-function safeAdd (x, y)
+local function safeAdd (x, y)
 	if x==nil then x=0 end
 	if y==nil then y=0 end
 	local lsw = bit.band(x , 0xffff) + bit.band(y , 0xffff)
@@ -15,33 +15,33 @@ end
 --[[
 	Bitwise rotate a 32-bit number to the left.
 --]]
-function bitRotateLeft (num, cnt)
+local function bitRotateLeft (num, cnt)
 	return bit.bor( bit.lshift(num , cnt) , bit.rshift(num , (32 - cnt)) )
 end
 
 --[[
-	These functions implement the four basic operations the algorithm uses.
+	These local functions implement the four basic operations the algorithm uses.
 --]]
-function md5cmn (q, a, b, x, s, t)
+local function md5cmn (q, a, b, x, s, t)
 	return safeAdd(bitRotateLeft(safeAdd(safeAdd(a, q), safeAdd(x, t)), s), b)
 end
-function md5ff (a, b, c, d, x, s, t)
+local function md5ff (a, b, c, d, x, s, t)
 	return md5cmn( bit.bor(bit.band(b , c) , bit.band(bit.bnot(b) , d) ), a, b, x, s, t)
 end
-function md5gg (a, b, c, d, x, s, t)
+local function md5gg (a, b, c, d, x, s, t)
 	return md5cmn( bit.bor(bit.band(b , d) , bit.band(c , bit.bnot(d)) ), a, b, x, s, t)
 end
-function md5hh (a, b, c, d, x, s, t)
+local function md5hh (a, b, c, d, x, s, t)
 	return md5cmn( bit.bxor(b , c , d), a, b, x, s, t)
 end
-function md5ii (a, b, c, d, x, s, t)
+local function md5ii (a, b, c, d, x, s, t)
 	return md5cmn( bit.bxor(c , bit.bor( b , bit.bnot(d) ) ), a, b, x, s, t)
 end
 
 --[[
 	Calculate the MD5 of an array of little-endian words, and a bit length.
 --]]
-function binlMD5 (x, len)
+local function binlMD5 (x, len)
 	--append padding
 	x[1+bit.arshift(len , 5)] = bit.bor( x[1+bit.arshift(len , 5)] , bit.lshift(0x80 , (len % 32)) )
 	x[1+bit.lshift(bit.rshift( len + 64 , 9 ) , 4) + 14] = len
@@ -141,7 +141,7 @@ end
 --[[
 	 Convert an array of little-endian words to a string
 --]]
-function binl2rstr (input)
+local function binl2rstr (input)
 	local i
 	local output = {}
 	local length32 = #input * 32
@@ -155,7 +155,7 @@ end
 	 Convert a raw string to an array of little-endian words
 	 Characters >255 have their high-byte silently ignored.
 --]]
-function rstr2binl (input)
+local function rstr2binl (input)
 	local output = {}
 	for i = 1,bit.arshift( string.len(input) , 2) do
 	  output[i] = 0
@@ -172,11 +172,11 @@ end
 --[[
 	 Calculate the MD5 of a raw string
 --]]
-function rstrMD5 (s)
+local function rstrMD5 (s)
 	return binl2rstr(binlMD5(rstr2binl(s), string.len(s) * 8))
 end
 
-function concatArray(a,b)
+local function concatArray(a,b)
 	local c = {}
 	for _,v in ipairs(a) do
 		table.insert(c,v)
@@ -186,14 +186,14 @@ function concatArray(a,b)
 	end
 end
 
-function charAt(str,n)
+local function charAt(str,n)
 	return string.sub(str,n,n)
 end
 
 --[[
 	 Calculate the HMAC-MD5, of a key and some data (raw strings)
 --]]
-function rstrHMACMD5 (key, data)
+local function rstrHMACMD5 (key, data)
 	local i
 	local bkey = rstr2binl(key)
 	local ipad = {}
@@ -215,7 +215,7 @@ end
 --[[
 	 Convert a raw string to a hex string
 --]]
-function rstr2hex (input)
+local function rstr2hex (input)
 	local hexTab = '0123456789abcdef'
 	local output = {}
 	for i = 1,string.len(input) do
@@ -229,7 +229,7 @@ end
 --[[
 	TODO: Encode a string as utf-8
 --]]
-function str2rstrUTF8 (input)
+local function str2rstrUTF8 (input)
 	--return unescape(encodeURIComponent(input))
 	return input
 end
@@ -237,20 +237,20 @@ end
 --[[
 	Take string arguments and return either raw or hex encoded strings
 --]]
-function rawMD5 (s)
+local function rawMD5 (s)
 	return rstrMD5(str2rstrUTF8(s))
 end
-function hexMD5 (s)
+local function hexMD5 (s)
 	return rstr2hex(rawMD5(s))
 end
-function rawHMACMD5 (k, d)
+local function rawHMACMD5 (k, d)
 	return rstrHMACMD5(str2rstrUTF8(k), str2rstrUTF8(d))
 end
-function hexHMACMD5 (k, d)
+local function hexHMACMD5 (k, d)
 	return rstr2hex(rawHMACMD5(k, d))
 end
 
-function md5 (str, key, raw)
+local function md5 (str, key, raw)
 	if not key then
 	  if not raw then
 		return hexMD5(str)
